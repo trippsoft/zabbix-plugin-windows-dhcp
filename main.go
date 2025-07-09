@@ -163,7 +163,7 @@ func executePowershellCmdlet(cmdlet string) ([]byte, error) {
 		"-nologo",
 		"-noprofile",
 		"-command",
-		fmt.Sprintf("\"{ %s }\"", cmdlet))
+		cmdlet)
 
 	return cmd.CombinedOutput()
 }
