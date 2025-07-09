@@ -29,12 +29,7 @@ var _ plugin.Exporter = (*windowsDhcpPlugin)(nil)
 func run() error {
 	p := &windowsDhcpPlugin{}
 
-	plugin.RegisterMetrics(
-		p,
-		"WindowsDhcp",
-		"windows_dhcp.scope.get",
-		"The list of DHCP scopes.",
-	)
+	plugin.RegisterMetrics(p, "WindowsDhcp", "windows_dhcp.scope.get", "The list of DHCP scopes.")
 
 	h, err := container.NewHandler("WindowsDhcp")
 	if err != nil {
@@ -75,12 +70,7 @@ func (p *windowsDhcpPlugin) Export(key string, params []string, context plugin.C
 }
 
 func executePowershellCmdlet(cmdlet string) ([]byte, error) {
-	cmd := exec.Command(
-		"powershell.exe",
-		"-nologo",
-		"-noprofile",
-		"-command",
-		cmdlet)
+	cmd := exec.Command("powershell.exe", "-nologo", "-noprofile", "-command", cmdlet)
 
 	return cmd.CombinedOutput()
 }
