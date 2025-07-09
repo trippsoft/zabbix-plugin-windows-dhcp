@@ -99,7 +99,7 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 	err = json.Unmarshal(jsonResult, &result)
 
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to unmarshal scope IDs")
+		return nil, errs.Wrapf(err, "failed to unmarshal scope IDs from %s", jsonResult)
 	}
 
 	return result, nil
