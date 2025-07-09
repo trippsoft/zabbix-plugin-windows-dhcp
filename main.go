@@ -6,8 +6,9 @@ import (
 	"os/exec"
 	"strconv"
 
-	"git.zabbix.com/ap/plugin-support/plugin"
-	"git.zabbix.com/ap/plugin-support/plugin/container"
+	"golang.zabbix.com/sdk/errs"
+	"golang.zabbix.com/sdk/plugin"
+	"golang.zabbix.com/sdk/plugin/container"
 )
 
 const (
@@ -25,6 +26,8 @@ type windowsDhcpPlugin struct {
 	plugin.Base
 }
 
+var _ plugin.Exporter = (*windowsDhcpPlugin)(nil)
+
 func run() error {
 	p := &windowsDhcpPlugin{}
 
@@ -41,14 +44,14 @@ func run() error {
 
 	h, err := container.NewHandler("WindowsDhcp")
 	if err != nil {
-		return fmt.Errorf("failed to create handler: %w", err)
+		return errs.Wrap(err, "failed to create handler")
 	}
 
-	p.Logger = &h
+	p.Logger = h
 
 	err = h.Execute()
 	if err != nil {
-		return fmt.Errorf("failed to execute handler: %w", err)
+		return errs.Wrap(err, "failed to execute handler")
 	}
 
 	return nil
@@ -63,7 +66,7 @@ func (p *windowsDhcpPlugin) Export(key string, params []string, context plugin.C
 	case "scope_in_use":
 		return p.getScopeInUse(params)
 	default:
-		return nil, fmt.Errorf("unknown item key %q", key)
+		return nil, errs.Errorf("unknown item key %q", key)
 	}
 }
 
@@ -72,7 +75,7 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 	jsonResult, err := executePowershellCmdlet("Get-DhcpServerv4Scope | Select-Object -ExpandProperty ScopeId")
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute PowerShell cmdlet to get DHCP scope IDs: %w", err)
+		return nil, errs.Wrap(err, "failed to execute PowerShell cmdlet to get DHCP scope IDs")
 	}
 
 	result := make([]string, 0)
@@ -81,10 +84,22 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 		return result, nil
 	}
 
+	if jsonResult[0] == '"' {
+		var singleResult string
+		err = json.Unmarshal(jsonResult, &singleResult)
+		if err != nil {
+			return nil, errs.Wrap(err, "failed to unmarshal single scope ID")
+		}
+
+		result = append(result, singleResult)
+
+		return result, nil
+	}
+
 	err = json.Unmarshal(jsonResult, &result)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal scope IDs: %w", err)
+		return nil, errs.Wrap(err, "failed to unmarshal scope IDs")
 	}
 
 	return result, nil
@@ -93,7 +108,7 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
 
 	if len(params) == 0 {
-		return nil, fmt.Errorf("scope ID is required for scope_free")
+		return nil, errs.Errorf("scope ID is required for scope_free")
 	}
 
 	scopeID := params[0]
@@ -101,16 +116,16 @@ func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
 
 	resultBytes, err := executePowershellCmdlet(cmdlet)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute PowerShell cmdlet to get free IPs in scope %s: %w", scopeID, err)
+		return nil, errs.Wrapf(err, "failed to execute PowerShell cmdlet to get free IPs in scope %s", scopeID)
 	}
 
 	if len(resultBytes) == 0 {
-		return nil, fmt.Errorf("failed to retrieve free IPs in scope %s", scopeID)
+		return nil, errs.Wrapf(err, "failed to retrieve free IPs in scope %s", scopeID)
 	}
 
 	result, err := strconv.Atoi(string(resultBytes))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse free IPs in scope %s: %w", scopeID, err)
+		return nil, errs.Wrapf(err, "failed to parse free IPs in scope %s", scopeID)
 	}
 
 	return result, nil
@@ -119,7 +134,7 @@ func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
 func (p *windowsDhcpPlugin) getScopeInUse(params []string) (any, error) {
 
 	if len(params) == 0 {
-		return nil, fmt.Errorf("scope ID is required for scope_free")
+		return nil, errs.Errorf("scope ID is required for scope_free")
 	}
 
 	scopeID := params[0]
@@ -127,16 +142,16 @@ func (p *windowsDhcpPlugin) getScopeInUse(params []string) (any, error) {
 
 	resultBytes, err := executePowershellCmdlet(cmdlet)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute PowerShell cmdlet to get in-use IPs in scope %s: %w", scopeID, err)
+		return nil, errs.Wrapf(err, "failed to execute PowerShell cmdlet to get in-use IPs in scope %s", scopeID)
 	}
 
 	if len(resultBytes) == 0 {
-		return nil, fmt.Errorf("failed to retrieve in-use IPs in scope %s", scopeID)
+		return nil, errs.Wrapf(err, "failed to retrieve in-use IPs in scope %s", scopeID)
 	}
 
 	result, err := strconv.Atoi(string(resultBytes))
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse in-use IPs in scope %s: %w", scopeID, err)
+		return nil, errs.Wrapf(err, "failed to parse in-use IPs in scope %s", scopeID)
 	}
 
 	return result, nil
