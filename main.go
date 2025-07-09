@@ -111,7 +111,7 @@ func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
 		return nil, errs.Wrapf(err, "failed to retrieve free IPs in scope %s", scopeID)
 	}
 
-	result, err := strconv.Atoi(string(resultBytes))
+	result, err := strconv.Atoi(strings.TrimSpace(string(resultBytes)))
 	if err != nil {
 		return nil, errs.Wrapf(err, "failed to parse free IPs in scope %s", scopeID)
 	}
@@ -137,7 +137,7 @@ func (p *windowsDhcpPlugin) getScopeInUse(params []string) (any, error) {
 		return nil, errs.Wrapf(err, "failed to retrieve in-use IPs in scope %s", scopeID)
 	}
 
-	result, err := strconv.Atoi(string(resultBytes))
+	result, err := strconv.Atoi(strings.TrimSpace(string(resultBytes)))
 	if err != nil {
 		return nil, errs.Wrapf(err, "failed to parse in-use IPs in scope %s", scopeID)
 	}
