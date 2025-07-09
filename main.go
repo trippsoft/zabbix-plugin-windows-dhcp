@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strconv"
@@ -79,30 +78,19 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 		return nil, errs.Wrap(err, "failed to execute PowerShell cmdlet to get DHCP scope IDs")
 	}
 
-	result := make([]string, 0)
-
 	if len(jsonResult) == 0 {
-		return result, nil
+		return "", nil
 	}
 
 	if jsonResult[0] == 34 { // Check if the result is a single string (e.g., "<string>")
 
 		singleResult := string(jsonResult)
-		singleResult = strings.Trim(singleResult, "\"\r\n") // Remove surrounding quotes and newlines
-		singleResult = strings.TrimSpace(singleResult)      // Remove any leading/trailing whitespace
+		singleResult = strings.TrimSpace(singleResult) // Remove any leading/trailing whitespace
 
-		result = append(result, singleResult)
-
-		return result, nil
+		return fmt.Sprintf("[%s]", singleResult), nil
 	}
 
-	err = json.Unmarshal(jsonResult, &result)
-
-	if err != nil {
-		return nil, errs.Wrapf(err, "failed to unmarshal scope IDs from %s", jsonResult)
-	}
-
-	return result, nil
+	return string(jsonResult), nil
 }
 
 func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
