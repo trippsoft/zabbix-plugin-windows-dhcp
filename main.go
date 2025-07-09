@@ -32,11 +32,11 @@ func run() error {
 		p,
 		"WindowsDhcp",
 		"scope_ids",
-		"The list of DHCP scope IDs",
+		"The list of DHCP scope IDs.",
 		"scope_free",
-		"The number of free IP addresses in the DHCP scope",
+		"The number of free IP addresses in the DHCP scope.",
 		"scope_in_use",
-		"The number of used IP addresses in the DHCP scope",
+		"The number of used IP addresses in the DHCP scope.",
 	)
 
 	h, err := container.NewHandler("WindowsDhcp")
