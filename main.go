@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os/exec"
-	"strconv"
-	"strings"
 
 	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/plugin"
@@ -12,7 +10,7 @@ import (
 )
 
 const (
-	getScopeIdsCmdlet = "Get-DhcpServerv4Scope -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ScopeId -ErrorAction SilentlyContinue | Select-Object -ExpandProperty IPAddressToString -ErrorAction SilentlyContinue | ConvertTo-Json -ErrorAction SilentlyContinue"
+	getScopesCmdlet = "Get-DhcpServerv4ScopeStatistics -ErrorAction SilentlyContinue | Select-Object -Property ScopeId, Free, InUse -ErrorAction SilentlyContinue | ConvertTo-Json -ErrorAction SilentlyContinue"
 )
 
 func main() {
@@ -34,12 +32,8 @@ func run() error {
 	plugin.RegisterMetrics(
 		p,
 		"WindowsDhcp",
-		"windows_dhcp.scope_ids",
-		"The list of DHCP scope IDs.",
-		"windows_dhcp.scope_free",
-		"The number of free IP addresses in the DHCP scope.",
-		"windows_dhcp.scope_in_use",
-		"The number of used IP addresses in the DHCP scope.",
+		"windows_dhcp.scope.get",
+		"The list of DHCP scopes.",
 	)
 
 	h, err := container.NewHandler("WindowsDhcp")
@@ -58,91 +52,26 @@ func run() error {
 }
 
 func (p *windowsDhcpPlugin) Export(key string, params []string, context plugin.ContextProvider) (any, error) {
-	switch key {
-	case "windows_dhcp.scope_ids":
-		return p.getScopeIDs()
-	case "windows_dhcp.scope_free":
-		return p.getScopeFree(params)
-	case "windows_dhcp.scope_in_use":
-		return p.getScopeInUse(params)
-	default:
-		return nil, errs.Errorf("unknown item key %q", key)
+
+	if key != "windows_dhcp.scope.get" {
+		return nil, errs.Errorf("unknown key %q", key)
 	}
-}
 
-func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
-
-	jsonResult, err := executePowershellCmdlet(getScopeIdsCmdlet)
+	jsonResult, err := executePowershellCmdlet(getScopesCmdlet)
 
 	if err != nil {
-		return nil, errs.Wrap(err, "failed to execute PowerShell cmdlet to get DHCP scope IDs")
+		return nil, errs.Wrap(err, "failed to execute PowerShell cmdlet to get DHCP scopes")
 	}
 
 	if len(jsonResult) == 0 {
 		return "[]", nil
 	}
 
-	if jsonResult[0] == 34 { // Check if the result is a single string (e.g., "<string>")
-
-		singleResult := string(jsonResult)
-		singleResult = strings.TrimSpace(singleResult) // Remove any leading/trailing whitespace
-
-		return fmt.Sprintf("[%s]", singleResult), nil
+	if jsonResult[0] != 91 { // Check if the result is a single object (e.g., "{...}")
+		return fmt.Sprintf("[%s]", string(jsonResult)), nil
 	}
 
 	return string(jsonResult), nil
-}
-
-func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
-
-	if len(params) == 0 {
-		return nil, errs.Errorf("scope ID is required for scope_free")
-	}
-
-	scopeID := params[0]
-	cmdlet := fmt.Sprintf("Get-DhcpServerv4ScopeStatistics -ScopeId '%s' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Free -ErrorAction SilentlyContinue", scopeID)
-
-	resultBytes, err := executePowershellCmdlet(cmdlet)
-	if err != nil {
-		return nil, errs.Wrapf(err, "failed to execute PowerShell cmdlet to get free IPs in scope %s", scopeID)
-	}
-
-	if len(resultBytes) == 0 {
-		return nil, errs.Wrapf(err, "failed to retrieve free IPs in scope %s", scopeID)
-	}
-
-	result, err := strconv.Atoi(strings.TrimSpace(string(resultBytes)))
-	if err != nil {
-		return nil, errs.Wrapf(err, "failed to parse free IPs in scope %s", scopeID)
-	}
-
-	return result, nil
-}
-
-func (p *windowsDhcpPlugin) getScopeInUse(params []string) (any, error) {
-
-	if len(params) == 0 {
-		return nil, errs.Errorf("scope ID is required for scope_free")
-	}
-
-	scopeID := params[0]
-	cmdlet := fmt.Sprintf("Get-DhcpServerv4ScopeStatistics -ScopeId '%s' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InUse -ErrorAction SilentlyContinue", scopeID)
-
-	resultBytes, err := executePowershellCmdlet(cmdlet)
-	if err != nil {
-		return nil, errs.Wrapf(err, "failed to execute PowerShell cmdlet to get in-use IPs in scope %s", scopeID)
-	}
-
-	if len(resultBytes) == 0 {
-		return nil, errs.Wrapf(err, "failed to retrieve in-use IPs in scope %s", scopeID)
-	}
-
-	result, err := strconv.Atoi(strings.TrimSpace(string(resultBytes)))
-	if err != nil {
-		return nil, errs.Wrapf(err, "failed to parse in-use IPs in scope %s", scopeID)
-	}
-
-	return result, nil
 }
 
 func executePowershellCmdlet(cmdlet string) ([]byte, error) {
