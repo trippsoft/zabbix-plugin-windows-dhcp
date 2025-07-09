@@ -73,7 +73,7 @@ func (p *windowsDhcpPlugin) Export(key string, params []string, context plugin.C
 
 func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 
-	jsonResult, err := executePowershellCmdlet("Get-DhcpServerv4Scope | Select-Object -ExpandProperty ScopeId")
+	jsonResult, err := executePowershellCmdlet(getScopeIdsCmdlet)
 
 	if err != nil {
 		return nil, errs.Wrap(err, "failed to execute PowerShell cmdlet to get DHCP scope IDs")
