@@ -79,7 +79,7 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 	}
 
 	if len(jsonResult) == 0 {
-		return "", nil
+		return "[]", nil
 	}
 
 	if jsonResult[0] == 34 { // Check if the result is a single string (e.g., "<string>")
