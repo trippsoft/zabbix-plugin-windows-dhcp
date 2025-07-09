@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"golang.zabbix.com/sdk/errs"
 	"golang.zabbix.com/sdk/plugin"
@@ -84,12 +85,11 @@ func (p *windowsDhcpPlugin) getScopeIDs() (any, error) {
 		return result, nil
 	}
 
-	if jsonResult[0] == '"' {
-		var singleResult string
-		err = json.Unmarshal(jsonResult, &singleResult)
-		if err != nil {
-			return nil, errs.Wrap(err, "failed to unmarshal single scope ID")
-		}
+	if jsonResult[0] == 34 { // Check if the result is a single string (e.g., "<string>")
+
+		singleResult := string(jsonResult)
+		singleResult = strings.Trim(singleResult, "\"\r\n") // Remove surrounding quotes and newlines
+		singleResult = strings.TrimSpace(singleResult)      // Remove any leading/trailing whitespace
 
 		result = append(result, singleResult)
 
