@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	getScopeIdsCmdlet = "Get-DhcpServerv4Scope -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ScopeId -ErrorAction SilentlyContinue | ConvertTo-Json -ErrorAction SilentlyContinue"
+	getScopeIdsCmdlet = "Get-DhcpServerv4Scope -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ScopeId -ErrorAction SilentlyContinue | Select-Object -ExpandProperty IPAddressToString -ErrorAction SilentlyContinue | ConvertTo-Json -ErrorAction SilentlyContinue"
 )
 
 func main() {
