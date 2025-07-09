@@ -35,11 +35,11 @@ func run() error {
 	plugin.RegisterMetrics(
 		p,
 		"WindowsDhcp",
-		"scope_ids",
+		"windows_dhcp.scope_ids",
 		"The list of DHCP scope IDs.",
-		"scope_free",
+		"windows_dhcp.scope_free",
 		"The number of free IP addresses in the DHCP scope.",
-		"scope_in_use",
+		"windows_dhcp.scope_in_use",
 		"The number of used IP addresses in the DHCP scope.",
 	)
 
@@ -60,11 +60,11 @@ func run() error {
 
 func (p *windowsDhcpPlugin) Export(key string, params []string, context plugin.ContextProvider) (any, error) {
 	switch key {
-	case "scope_ids":
+	case "windows_dhcp.scope_ids":
 		return p.getScopeIDs()
-	case "scope_free":
+	case "windows_dhcp.scope_free":
 		return p.getScopeFree(params)
-	case "scope_in_use":
+	case "windows_dhcp.scope_in_use":
 		return p.getScopeInUse(params)
 	default:
 		return nil, errs.Errorf("unknown item key %q", key)
