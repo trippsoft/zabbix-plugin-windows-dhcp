@@ -100,7 +100,7 @@ func (p *windowsDhcpPlugin) getScopeFree(params []string) (any, error) {
 	}
 
 	scopeID := params[0]
-	cmdlet := fmt.Sprintf("Get-DhcpServerv4Scope -ScopeId %s -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Free -ErrorAction SilentlyContinue", scopeID)
+	cmdlet := fmt.Sprintf("Get-DhcpServerv4ScopeStatistics -ScopeId '%s' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Free -ErrorAction SilentlyContinue", scopeID)
 
 	resultBytes, err := executePowershellCmdlet(cmdlet)
 	if err != nil {
@@ -126,7 +126,7 @@ func (p *windowsDhcpPlugin) getScopeInUse(params []string) (any, error) {
 	}
 
 	scopeID := params[0]
-	cmdlet := fmt.Sprintf("Get-DhcpServerv4Scope -ScopeId %s -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InUse -ErrorAction SilentlyContinue", scopeID)
+	cmdlet := fmt.Sprintf("Get-DhcpServerv4ScopeStatistics -ScopeId '%s' -ErrorAction SilentlyContinue | Select-Object -ExpandProperty InUse -ErrorAction SilentlyContinue", scopeID)
 
 	resultBytes, err := executePowershellCmdlet(cmdlet)
 	if err != nil {
